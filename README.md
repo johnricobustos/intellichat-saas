@@ -21,7 +21,7 @@ The embeddable widget works on any website — customers get instant, accurate a
 Full analytics overview with real-time metrics — messages, conversations, resolution rate, and escalation tracking:
 
 <p align="center">
-  <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663479629001/rIixNCUSROYjLcbP.png" alt="IntelliChat Admin Dashboard" width="800" />
+  <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663479629001/kImamOIArXQEMwtD.png" alt="IntelliChat Admin Dashboard" width="800" />
 </p>
 
 ### Q&A Training Panel
