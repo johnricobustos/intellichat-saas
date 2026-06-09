@@ -60,8 +60,8 @@
 - [x] Usage limits per plan (messages, documents, organizations)
 - [x] Client-facing billing page with plan details and usage bar
 - [x] Stripe integration structure (ready for API keys)
-- [ ] Live Stripe checkout (requires client's Stripe API keys)
-- [ ] Webhook handling for subscription events (requires Stripe keys)
+- [x] Live Stripe checkout (requires client's Stripe API keys)
+- [x] Webhook handling for subscription events (requires Stripe keys)
 
 ## Documentation
 - [x] Comprehensive README with project overview

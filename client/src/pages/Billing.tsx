@@ -1,14 +1,16 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { OrgProvider, useOrg } from "@/contexts/OrgContext";
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Zap, Rocket, Building2 } from "lucide-react";
+import { Check, CreditCard, Zap, Rocket, Building2, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 const plans = [
   {
     name: "Starter",
+    key: "starter" as const,
     price: "$29",
     period: "/month",
     icon: Zap,
@@ -18,6 +20,7 @@ const plans = [
   },
   {
     name: "Pro",
+    key: "pro" as const,
     price: "$79",
     period: "/month",
     icon: Rocket,
@@ -27,6 +30,7 @@ const plans = [
   },
   {
     name: "Enterprise",
+    key: "enterprise" as const,
     price: "$199",
     period: "/month",
     icon: Building2,
@@ -40,8 +44,49 @@ function BillingContent() {
   const { currentOrg } = useOrg();
   const currentPlan = currentOrg?.plan || "starter";
 
-  const handleUpgrade = (planName: string) => {
-    toast.info(`To upgrade to ${planName}, configure your Stripe API keys in the environment variables. See README for setup instructions.`);
+  const { data: billingStatus } = trpc.billing.status.useQuery(
+    { orgId: currentOrg?.id || 0 },
+    { enabled: !!currentOrg }
+  );
+
+  const checkoutMutation = trpc.billing.checkout.useMutation({
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const portalMutation = trpc.billing.portal.useMutation({
+    onSuccess: (data) => {
+      if (data.url) {
+        window.open(data.url, "_blank");
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleUpgrade = (planKey: "starter" | "pro" | "enterprise") => {
+    if (!currentOrg) return;
+    if (!billingStatus?.stripeConfigured) {
+      toast.info("Stripe is not configured. Add STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY to your environment variables. See README for setup instructions.");
+      return;
+    }
+    checkoutMutation.mutate({
+      orgId: currentOrg.id,
+      plan: planKey,
+      successUrl: `${window.location.origin}/billing?success=true`,
+      cancelUrl: `${window.location.origin}/billing?cancelled=true`,
+    });
+  };
+
+  const handleManageSubscription = () => {
+    if (!currentOrg) return;
+    portalMutation.mutate({
+      orgId: currentOrg.id,
+      returnUrl: `${window.location.origin}/billing`,
+    });
   };
 
   return (
@@ -75,7 +120,14 @@ function BillingContent() {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Status</p>
-              <Badge variant="default">Active</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">Active</Badge>
+                {currentOrg?.stripeSubscriptionId && (
+                  <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                    <ExternalLink className="h-3 w-3 mr-1" /> Manage
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           {/* Usage bar */}
@@ -97,10 +149,10 @@ function BillingContent() {
       {/* Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map(plan => {
-          const isCurrent = plan.name.toLowerCase() === currentPlan;
+          const isCurrent = plan.key === currentPlan;
           const Icon = plan.icon;
           return (
-            <Card key={plan.name} className={`bg-card border-border relative ${plan.highlighted ? "ring-2 ring-primary" : ""}`}>
+            <Card key={plan.key} className={`bg-card border-border relative ${plan.highlighted ? "ring-2 ring-primary" : ""}`}>
               {plan.highlighted && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
@@ -127,9 +179,12 @@ function BillingContent() {
                 <Button
                   className="w-full"
                   variant={isCurrent ? "secondary" : plan.highlighted ? "default" : "outline"}
-                  disabled={isCurrent}
-                  onClick={() => handleUpgrade(plan.name)}
+                  disabled={isCurrent || checkoutMutation.isPending}
+                  onClick={() => handleUpgrade(plan.key)}
                 >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
                   {isCurrent ? "Current Plan" : "Upgrade"}
                 </Button>
               </CardContent>
@@ -139,14 +194,18 @@ function BillingContent() {
       </div>
 
       {/* Stripe Setup Notice */}
-      <Card className="bg-card border-border border-dashed">
-        <CardContent className="p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Payment processing is powered by Stripe. To enable live billing, add your <code className="bg-muted px-1 rounded">STRIPE_SECRET_KEY</code> and <code className="bg-muted px-1 rounded">STRIPE_PUBLISHABLE_KEY</code> to your environment variables.
-            See the README for detailed setup instructions.
-          </p>
-        </CardContent>
-      </Card>
+      {!billingStatus?.stripeConfigured && (
+        <Card className="bg-card border-border border-dashed">
+          <CardContent className="p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Payment processing is powered by Stripe. To enable live billing, add your{" "}
+              <code className="bg-muted px-1 rounded">STRIPE_SECRET_KEY</code>,{" "}
+              <code className="bg-muted px-1 rounded">STRIPE_WEBHOOK_SECRET</code>, and plan Price IDs to your environment variables.
+              See the README for detailed setup instructions.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

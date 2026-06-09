@@ -14,6 +14,8 @@ interface Organization {
   monthlyMessageLimit: number | null;
   maxDocuments: number | null;
   messagesUsedThisMonth: number | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
   memberRole: string;
 }
 

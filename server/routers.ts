@@ -20,6 +20,7 @@ import {
 import { processDocumentText, generateChatResponse } from "./rag";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { createCheckoutSession, createPortalSession, isStripeConfigured, getSubscriptionStatus, PLANS } from "./billing";
 
 // Helper to verify org membership
 async function verifyOrgAccess(userId: number, orgId: number) {
@@ -283,6 +284,57 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         await verifyOrgAccess(ctx.user.id, input.orgId);
         return getAnalyticsTimeline(input.orgId, input.days);
+      }),
+  }),
+
+  // ==================== BILLING ====================
+  billing: router({
+    status: protectedProcedure
+      .input(z.object({ orgId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        await verifyOrgAccess(ctx.user.id, input.orgId);
+        const sub = await getSubscriptionStatus(input.orgId);
+        return {
+          ...sub,
+          stripeConfigured: isStripeConfigured(),
+          plans: PLANS,
+        };
+      }),
+
+    checkout: protectedProcedure
+      .input(z.object({
+        orgId: z.number(),
+        plan: z.enum(["starter", "pro", "enterprise"]),
+        successUrl: z.string(),
+        cancelUrl: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const org = await verifyOrgAccess(ctx.user.id, input.orgId);
+        if (!isStripeConfigured()) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Stripe is not configured. Add STRIPE_SECRET_KEY to environment variables." });
+        }
+        const result = await createCheckoutSession({
+          orgId: input.orgId,
+          plan: input.plan,
+          customerEmail: ctx.user.email || "",
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl,
+        });
+        return result;
+      }),
+
+    portal: protectedProcedure
+      .input(z.object({ orgId: z.number(), returnUrl: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const org = await verifyOrgAccess(ctx.user.id, input.orgId);
+        if (!org.stripeCustomerId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "No active subscription found" });
+        }
+        const result = await createPortalSession({
+          customerId: org.stripeCustomerId,
+          returnUrl: input.returnUrl,
+        });
+        return result;
       }),
   }),
 

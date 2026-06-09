@@ -121,7 +121,28 @@ S3_BUCKET=your-bucket-name
 S3_REGION=us-east-1
 S3_ACCESS_KEY_ID=your-access-key
 S3_SECRET_ACCESS_KEY=your-secret-key
+
+# Stripe Billing (optional - enables subscription payments)
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+STRIPE_STARTER_PRICE_ID=price_starter_id
+STRIPE_PRO_PRICE_ID=price_pro_id
+STRIPE_ENTERPRISE_PRICE_ID=price_enterprise_id
 ```
+
+### Stripe Setup (Optional)
+
+To enable subscription billing:
+
+1. Create a [Stripe account](https://stripe.com)
+2. In Stripe Dashboard, create 3 Products with recurring prices:
+   - Starter ($29/month)
+   - Pro ($79/month)
+   - Enterprise ($199/month)
+3. Copy each Price ID into the environment variables above
+4. Set up a webhook endpoint pointing to `https://your-domain.com/api/webhooks/stripe`
+5. Select these webhook events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+6. Copy the webhook signing secret to `STRIPE_WEBHOOK_SECRET`
 
 ---
 
