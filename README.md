@@ -2,6 +2,36 @@
 
 A full-stack, multi-tenant SaaS platform that lets businesses deploy a RAG-powered AI chatbot trained on their own documents. Embeddable on any website with a single script tag.
 
+**Built by [John Rico Bustos](https://github.com/johnricobustos)**
+
+---
+
+## Demo
+
+### Chat Widget in Action
+
+The embeddable widget works on any website — customers get instant, accurate answers from your knowledge base:
+
+<p align="center">
+  <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663479629001/AGrRDsgfrLTpWqZL.png" alt="IntelliChat Widget Demo" width="500" />
+</p>
+
+### Admin Dashboard
+
+Full analytics overview with real-time metrics — messages, conversations, resolution rate, and escalation tracking:
+
+<p align="center">
+  <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663479629001/rIixNCUSROYjLcbP.png" alt="IntelliChat Admin Dashboard" width="800" />
+</p>
+
+### Q&A Training Panel
+
+Teach your bot with custom Q&A pairs that override AI responses — continuous learning made simple:
+
+<p align="center">
+  <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310519663479629001/jpPUNaAeTMiOteFU.png" alt="IntelliChat Q&A Training" width="800" />
+</p>
+
 ---
 
 ## Features
